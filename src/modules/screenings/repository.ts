@@ -19,4 +19,29 @@ export default (db: Database) => ({
 
     return result
   },
+
+  findAll: async () => {
+    const screenings = await db
+      .selectFrom('screenings')
+      .innerJoin('movies', 'movies.id', 'screenings.movieId')
+      .selectAll('screenings')
+      .select([
+        'movies.id as movieId',
+        'movies.title as movieTitle',
+        'movies.year as movieYear',
+      ])
+      .execute()
+
+    return screenings.map((s) => ({
+      id: s.id,
+      screeningTime: s.screeningTime,
+      totalTickets: s.totalTickets,
+      ticketsLeft: s.ticketsLeft,
+      movie: {
+        id: s.movieId,
+        title: s.movieTitle,
+        year: s.movieYear,
+      },
+    }))
+  },
 })

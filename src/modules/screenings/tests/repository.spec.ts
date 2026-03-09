@@ -33,3 +33,39 @@ describe('create', () => {
     })
   })
 })
+
+describe('findAll', () => {
+  it('should return screenings with movie details', async () => {
+    // Create a movie
+    await createMovies([
+      {
+        id: 2,
+        title: 'Inception',
+        year: 2010,
+      },
+    ])
+
+    // Create screening
+    await repository.create({
+      movieId: 2,
+      screeningTime: '2025-12-25T19:30:00Z',
+      totalTickets: 100,
+    })
+
+    // Get all screenings
+    const screenings = await repository.findAll()
+
+    expect(screenings).toHaveLength(2)
+    expect(screenings[1]).toMatchObject({
+      id: expect.any(Number),
+      screeningTime: '2025-12-25T19:30:00Z',
+      totalTickets: 100,
+      ticketsLeft: 100,
+      movie: {
+        id: 2,
+        title: 'Inception',
+        year: 2010,
+      },
+    })
+  })
+})

@@ -40,3 +40,33 @@ describe('POST /screenings', () => {
       .expect(400)
   })
 })
+
+describe('GET /screenings', () => {
+  it('should return 200 with array of screenings', async () => {
+    await createMovies([{ id: 3, title: 'Interstellar', year: 2014 }])
+
+    await supertest(app).post('/screenings').send({
+      movieId: 3,
+      screeningTime: '2025-12-31T20:00:00Z',
+      totalTickets: 150,
+    })
+
+    const { body } = await supertest(app).get('/screenings').expect(200)
+
+    expect(body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.any(Number),
+          screeningTime: '2025-12-31T20:00:00Z',
+          totalTickets: 150,
+          ticketsLeft: 150,
+          movie: {
+            id: 3,
+            title: 'Interstellar',
+            year: 2014,
+          },
+        }),
+      ])
+    )
+  })
+})

@@ -18,5 +18,13 @@ export default (db: Database) => {
     }, StatusCodes.CREATED)
   )
 
+  router.get(
+    '/',
+    jsonRoute(async () => {
+      const screenings = await repository.findAll()
+      return screenings
+    })
+  )
+
   return router
 }
