@@ -58,3 +58,48 @@ describe('POST /tickets', () => {
       .expect(400)
   })
 })
+
+describe('GET /tickets', () => {
+  it('should return 200 with user bookings', async () => {
+    await createMovies([{ id: 4, title: 'The Dark Knight', year: 2008 }])
+    await createScreenings([
+      {
+        id: 4,
+        movieId: 4,
+        screeningTime: '2026-01-15T18:00:00Z',
+        totalTickets: 200,
+        ticketsLeft: 200,
+      },
+    ])
+
+    await supertest(app).post('/tickets').send({
+      screeningId: 4,
+      userId: 123,
+    })
+
+    const { body } = await supertest(app).get('/tickets?userId=123').expect(200)
+
+    expect(body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.any(Number),
+          userId: 123,
+          bookedAt: expect.any(String),
+          screening: expect.objectContaining({
+            id: 4,
+            screeningTime: '2026-01-15T18:00:00Z',
+            movie: {
+              id: 4,
+              title: 'The Dark Knight',
+              year: 2008,
+            },
+          }),
+        }),
+      ])
+    )
+  })
+
+  it('should return 400 if userId missing', async () => {
+    await supertest(app).get('/tickets').expect(400)
+  })
+})

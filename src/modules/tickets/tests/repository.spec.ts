@@ -53,3 +53,38 @@ describe('create', () => {
     ).rejects.toThrow(BadRequest)
   })
 })
+
+describe('findByUserId', () => {
+  it('should return user tickets with screening and movie details', async () => {
+    await createMovies([{ id: 3, title: 'Interstellar', year: 2014 }])
+
+    const screening = await screeningsRepository.create({
+      movieId: 3,
+      screeningTime: '2025-12-31T20:00:00Z',
+      totalTickets: 50,
+    })
+
+    await repository.create({
+      screeningId: screening.id!,
+      userId: 100,
+    })
+
+    const tickets = await repository.findByUserId(100)
+
+    expect(tickets).toHaveLength(1)
+    expect(tickets[0]).toMatchObject({
+      id: expect.any(Number),
+      userId: 100,
+      bookedAt: expect.any(String),
+      screening: {
+        id: screening.id,
+        screeningTime: '2025-12-31T20:00:00Z',
+        movie: {
+          id: 3,
+          title: 'Interstellar',
+          year: 2014,
+        },
+      },
+    })
+  })
+})

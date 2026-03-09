@@ -4,7 +4,6 @@ import BadRequest from '@/utils/errors/BadRequest'
 export default (db: Database) => ({
   create: async (data: { screeningId: number; userId: number }) =>
     await db.transaction().execute(async (trx) => {
-      // Get screening and lock the row
       const screening = await trx
         .selectFrom('screenings')
         .selectAll()
@@ -19,14 +18,12 @@ export default (db: Database) => ({
         throw new BadRequest('No tickets available')
       }
 
-      // Decrease ticketsLeft
       await trx
         .updateTable('screenings')
         .set({ ticketsLeft: screening.ticketsLeft - 1 })
         .where('id', '=', data.screeningId)
         .execute()
 
-      // Create ticket
       const ticket = await trx
         .insertInto('tickets')
         .values({
@@ -39,4 +36,36 @@ export default (db: Database) => ({
 
       return ticket
     }),
+
+  findByUserId: async (userId: number) => {
+    const tickets = await db
+      .selectFrom('tickets')
+      .innerJoin('screenings', 'screenings.id', 'tickets.screeningId')
+      .innerJoin('movies', 'movies.id', 'screenings.movieId')
+      .selectAll('tickets')
+      .select([
+        'screenings.id as screeningId',
+        'screenings.screeningTime as screeningTime',
+        'movies.id as movieId',
+        'movies.title as movieTitle',
+        'movies.year as movieYear',
+      ])
+      .where('tickets.userId', '=', userId)
+      .execute()
+
+    return tickets.map((t) => ({
+      id: t.id,
+      userId: t.userId,
+      bookedAt: t.bookedAt,
+      screening: {
+        id: t.screeningId,
+        screeningTime: t.screeningTime,
+        movie: {
+          id: t.movieId,
+          title: t.movieTitle,
+          year: t.movieYear,
+        },
+      },
+    }))
+  },
 })
